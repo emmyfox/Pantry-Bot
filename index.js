@@ -16,7 +16,7 @@ app.listen(PORT, () => {
 // 2. Initialize the Google Gen AI SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// 3. Initialize Discord Client (Only needs Guilds intent for gateway slash commands!)
+// 3. Initialize Discord Client
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
@@ -50,12 +50,6 @@ client.once('ready', async () => {
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName !== 'pantry') return;
-
-  // Restrict to pantry channel
-  if (!interaction.channel.name || !interaction.channel.name.includes('pantry')) {
-    await interaction.reply({ content: 'Please use this command in the pantry channel!', ephemeral: true });
-    return;
-  }
 
   const ingredients = interaction.options.getString('ingredients');
 
