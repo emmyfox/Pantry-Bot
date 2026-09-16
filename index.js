@@ -23,12 +23,6 @@ app.post('/recipe', async (req, res) => {
       });
     }
 
-    // 1. Instantly tell Discord "Working on it!" so it never times out
-    res.json({
-      type: 5 // Deferred channel message with source
-    });
-
-    // 2. Generate the recipe in the background
     const prompt = `You are a cozy and helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
     Provide 2-3 easy, quick meal ideas they can make using these items (you can assume basic pantry staples like oil, salt, and pepper). 
     Keep the descriptions concise, warm, and formatted with clear titles and short instructions.`;
@@ -38,16 +32,18 @@ app.post('/recipe', async (req, res) => {
       contents: prompt,
     });
 
-    // 3. Send the follow-up message back to Discord
-    const webhookUrl = `https://discord.com/api/v10/webhooks/${req.body.application_id}/${req.body.token}/messages/@original`;
-    await fetch(webhookUrl, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: response.text })
+    // Send the recipe straight back to Discord instantly
+    return res.json({
+      type: 4,
+      data: { content: response.text }
     });
 
   } catch (error) {
     console.error('Error generating recipes:', error);
+    return res.json({
+      type: 4,
+      data: { content: 'Oops, my kitchen hit a snag! Try running the command again.' }
+    });
   }
 });
 
