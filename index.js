@@ -2,7 +2,7 @@ import express from 'express';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { GoogleGenAI } from '@google/genai';
 
-// 1. Keep Render's web service happy with a tiny HTTP server
+// Keep Render's web service happy with a tiny HTTP server
 const app = express();
 app.get('/', (req, res) => {
   res.send('PantryHelper bot is running and cozy!');
@@ -13,10 +13,10 @@ app.listen(PORT, () => {
   console.log(`Web server listening on port ${PORT}`);
 });
 
-// 2. Initialize the Google Gen AI SDK
+// Initialize the Google Gen AI SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// 3. Initialize Discord Client with all required message intents
+// Initialize Discord Client with all required message intents
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -29,7 +29,7 @@ client.once('ready', () => {
   console.log(`Pantry bot logged in successfully as ${client.user.tag}!`);
 });
 
-// 4. Listen for chat messages
+// Listen for chat messages
 client.on('messageCreate', async (message) => {
   // Ignore bots or messages outside of the pantry channel
   if (message.author.bot) return;
@@ -66,5 +66,5 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// 5. Log into Discord
+// Log into Discord
 client.login(process.env.DISCORD_BOT_TOKEN);
