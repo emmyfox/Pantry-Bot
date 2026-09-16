@@ -1,81 +1,59 @@
-import express from 'express';
+import { Client, GatewayIntentBits } from 'discord.js';
 import { GoogleGenAI } from '@google/genai';
 
-const app = express();
-app.use(express.json());
-
+// Initialize the Google Gen AI SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-app.post('/recipe', async (req, res) => {
-  // Handle Discord's Ping validation handshake
-  if (req.body && req.body.type === 1) {
-    return res.json({ type: 1 });
-  }
+// Create a Discord client instance with message intents
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
+});
 
-  try {
-    const ingredients = req.body.data && req.body.data.options 
-      ? req.body.data.options[0].value 
-      : null;
+client.once('ready', () => {
+  console.log(`Pantry bot logged in successfully as ${client.user.tag}!`);
+});
+
+// Listen for chat messages
+client.on('messageCreate', async (message) => {
+  // Ignore messages from bots or messages outside of channels named pantry-helper
+  if (message.author.bot) return;
+  if (!message.channel.name || !message.channel.name.includes('pantry-helper')) return;
+
+  const content = message.content.trim();
+
+  // Check if message starts with !pantry
+  if (content.startsWith('!pantry')) {
+    const ingredients = content.replace('!pantry', '').trim();
 
     if (!ingredients) {
-      return res.json({
-        type: 4,
-        data: { content: 'Please provide some ingredients!' }
-      });
+      await message.reply('Please list what ingredients you have! Example: `!pantry chicken, rice, garlic`');
+      return;
     }
 
-    const prompt = `You are a cozy and helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
-    Provide 2-3 easy, quick meal ideas they can make using these items (you can assume basic pantry staples like oil, salt, and pepper). 
-    Keep the descriptions concise, warm, and formatted with clear titles and short instructions.`;
+    // Show a typing indicator while Gemini thinks
+    await message.channel.sendTyping();
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-
-    return res.json({
-      type: 4,
-      data: { content: response.text }
-    });
-
-  } catch (error) {
-    console.error('Error generating recipes:', error);
-    return res.json({
-      type: 4,
-      data: { content: 'Oops, my kitchen hit a snag! Try running the command again.' }
-    });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-  console.log(`Pantry bot backend running on port ${PORT}`);
-
-  if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_CLIENT_ID) {
     try {
-      const url = `https://discord.com/api/v10/applications/${process.env.DISCORD_CLIENT_ID}/commands`;
-      const commandData = {
-        name: 'pantry',
-        description: 'Get cozy meal ideas based on your available ingredients!',
-        options: [{
-          name: 'ingredients',
-          description: 'What ingredients do you have?',
-          type: 3,
-          required: true
-        }]
-      };
+      const prompt = `You are a cozy and helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
+      Provide 2-3 easy, quick meal ideas they can make using these items (you can assume basic pantry staples like oil, salt, and pepper). 
+      Keep the descriptions concise, warm, and formatted with clear titles and short instructions.`;
 
-      await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([commandData])
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
       });
-      console.log('Successfully registered /pantry command!');
-    } catch (err) {
-      console.log('Error auto-registering command:', err);
+
+      await message.reply(response.text);
+    } catch (error) {
+      console.error('Error generating recipes:', error);
+      await message.reply('Oh no, my kitchen is a bit overwhelmed right now! Try again in a second.');
     }
   }
 });
+
+// Log into Discord using your bot token
+client.login(process.env.DISCORD_BOT_TOKEN);
