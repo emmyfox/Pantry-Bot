@@ -16,7 +16,7 @@ app.listen(PORT, () => {
 // 2. Initialize the Google Gen AI SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// 3. Initialize Discord Client
+// 3. Initialize Discord Client with all required message intents
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,

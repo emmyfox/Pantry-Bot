@@ -1,4 +1,15 @@
-"dependencies": {
-  "@google/genai": "^0.1.1",
-  "discord.js": "^14.14.0"
+{
+  "name": "pantry-helper",
+  "version": "1.0.0",
+  "description": "A cozy Discord bot that generates recipes using Gemini",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google/genai": "^0.1.1",
+    "discord.js": "^14.14.0",
+    "express": "^4.19.2"
+  }
 }
