@@ -1,10 +1,22 @@
+import express from 'express';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { GoogleGenAI } from '@google/genai';
 
-// Initialize the Google Gen AI SDK
+// 1. Keep Render's web service happy with a tiny HTTP server
+const app = express();
+app.get('/', (req, res) => {
+  res.send('PantryHelper bot is running and cozy!');
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Web server listening on port ${PORT}`);
+});
+
+// 2. Initialize the Google Gen AI SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Create a Discord client instance with message intents
+// 3. Initialize Discord Client
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -17,15 +29,14 @@ client.once('ready', () => {
   console.log(`Pantry bot logged in successfully as ${client.user.tag}!`);
 });
 
-// Listen for chat messages
+// 4. Listen for chat messages
 client.on('messageCreate', async (message) => {
-  // Ignore messages from bots or messages outside of channels named pantry-helper
+  // Ignore bots or messages outside of the pantry channel
   if (message.author.bot) return;
-  if (!message.channel.name || !message.channel.name.includes('pantry-helper')) return;
+  if (!message.channel.name || !message.channel.name.includes('pantry')) return;
 
   const content = message.content.trim();
 
-  // Check if message starts with !pantry
   if (content.startsWith('!pantry')) {
     const ingredients = content.replace('!pantry', '').trim();
 
@@ -34,7 +45,7 @@ client.on('messageCreate', async (message) => {
       return;
     }
 
-    // Show a typing indicator while Gemini thinks
+    // Show typing status while Gemini cooks up ideas
     await message.channel.sendTyping();
 
     try {
@@ -55,5 +66,5 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// Log into Discord using your bot token
+// 5. Log into Discord
 client.login(process.env.DISCORD_BOT_TOKEN);
