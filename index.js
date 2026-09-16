@@ -4,8 +4,8 @@ import { GoogleGenAI } from '@google/genai';
 const app = express();
 app.use(express.json());
 
-// Initialize the Google Gen AI SDK (it automatically picks up GEMINI_API_KEY from environment variables)
-const ai = new GoogleGenAI();
+// Initialize the Google Gen AI SDK with your API key from Render's environment variables
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.post('/recipe', async (req, res) => {
   try {
@@ -15,7 +15,6 @@ app.post('/recipe', async (req, res) => {
       return res.status(400).json({ error: 'No ingredients provided!' });
     }
 
-    // Prompt the model to create easy recipes using the provided ingredients
     const prompt = `You are a helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
     Provide 2-3 easy, quick meal ideas they can make using these items (you can assume basic pantry staples like oil, salt, and pepper). 
     Keep the descriptions concise, cozy, and formatted with clear titles and short instructions.`;
