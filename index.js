@@ -7,6 +7,7 @@ app.use(express.json());
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.post('/recipe', async (req, res) => {
+  // Handle Discord's Ping validation handshake
   if (req.body && req.body.type === 1) {
     return res.json({ type: 1 });
   }
@@ -32,7 +33,6 @@ app.post('/recipe', async (req, res) => {
       contents: prompt,
     });
 
-    // Send the recipe straight back to Discord instantly
     return res.json({
       type: 4,
       data: { content: response.text }
