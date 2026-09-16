@@ -4,8 +4,8 @@ import { GoogleGenAI } from '@google/genai';
 const app = express();
 app.use(express.json());
 
-// Initialize the Google Gen AI SDK
-const ai = new GoogleGenAI();
+// Initialize the Google Gen AI SDK with your Render environment variable
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.post('/recipe', async (req, res) => {
   try {
