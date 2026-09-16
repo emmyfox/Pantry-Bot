@@ -4,7 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 const app = express();
 app.use(express.json());
 
-// Initialize the Google Gen AI SDK with your Render environment variable
+// Initialize the Google Gen AI SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.post('/recipe', async (req, res) => {
@@ -22,7 +22,7 @@ app.post('/recipe', async (req, res) => {
     if (!ingredients) {
       return res.json({
         type: 4,
-        data: { content: 'Please provide some ingredients!' }
+        data: { content: 'Please provide some ingredients! Example: `/pantry chicken, rice, garlic`' }
       });
     }
 
@@ -49,6 +49,42 @@ app.post('/recipe', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Pantry bot backend running on port ${PORT}`);
+
+  // Automatically register the /pantry command with Discord if bot credentials exist
+  if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_CLIENT_ID) {
+    try {
+      const url = `https://discord.com/api/v10/applications/${process.env.DISCORD_CLIENT_ID}/commands`;
+      const commandData = {
+        name: 'pantry',
+        description: 'Get cozy meal ideas based on your available ingredients!',
+        options: [
+          {
+            name: 'ingredients',
+            description: 'What ingredients do you have?',
+            type: 3, // String type
+            required: true
+          }
+        ]
+      };
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([commandData])
+      });
+
+      if (response.ok) {
+        console.log('Successfully registered /pantry command with Discord!');
+      } else {
+        console.log('Failed to auto-register command:', await response.text());
+      }
+    } catch (err) {
+      console.log('Error auto-registering command:', err);
+    }
+  }
 });
