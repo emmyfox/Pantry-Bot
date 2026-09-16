@@ -37,15 +37,21 @@ client.on('interactionCreate', async (interaction) => {
 
   try {
     const prompt = `You are a cozy and helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
-    Provide 2-3 easy, quick meal ideas they can make using these items (you can assume basic pantry staples like oil, salt, and pepper). 
-    Keep the descriptions concise, warm, and formatted with clear titles and short instructions.`;
+    Provide 2-3 brief, quick meal ideas they can make using these items (assume basic pantry staples like oil, salt, pepper). 
+    Keep it short, warm, and under 1,800 characters total.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
       contents: prompt,
     });
 
-    await interaction.editReply(response.text);
+    // Ensure text is safely under Discord's 2000 character limit
+    let replyText = response.text || 'Here are your recipes!';
+    if (replyText.length > 2000) {
+      replyText = replyText.substring(0, 1997) + '...';
+    }
+
+    await interaction.editReply(replyText);
   } catch (error) {
     console.error('Detailed Gemini Error:', error);
     await interaction.editReply(`Oops! Kitchen hiccup: \`${error.message || 'Unknown error'}\``);
