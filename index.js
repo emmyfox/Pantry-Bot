@@ -41,13 +41,12 @@ client.on('interactionCreate', async (interaction) => {
     Keep the descriptions concise, warm, and formatted with clear titles and short instructions.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: prompt,
     });
 
     await interaction.editReply(response.text);
   } catch (error) {
-    // This will print the actual technical error to your Render logs!
     console.error('Detailed Gemini Error:', error);
     await interaction.editReply(`Oops! Kitchen hiccup: \`${error.message || 'Unknown error'}\``);
   }
