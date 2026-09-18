@@ -40,32 +40,29 @@ client.on('interactionCreate', async (interaction) => {
   await interaction.deferReply();
 
   let responseText = null;
-  let attempts = 0;
-  const maxAttempts = 2;
+  const modelsToTry = ['gemini-3.6-flash', 'gemini-2.5-flash'];
+  let success = false;
 
-  // Retry loop to handle brief 503 high-demand spikes smoothly
-  while (attempts < maxAttempts && !responseText) {
-    attempts++;
+  const prompt = `You are a cozy and helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
+  Provide 2-3 brief, quick meal ideas they can make using these items (assume basic pantry staples like oil, salt, pepper). 
+  Keep it short, warm, and under 1,800 characters total.`;
+
+  for (const modelName of modelsToTry) {
+    if (success) break;
     try {
-      const prompt = `You are a cozy and helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
-      Provide 2-3 brief, quick meal ideas they can make using these items (assume basic pantry staples like oil, salt, pepper). 
-      Keep it short, warm, and under 1,800 characters total.`;
-
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: modelName,
         contents: prompt,
       });
-
       responseText = response.text;
+      success = true;
     } catch (error) {
-      console.error(`Attempt ${attempts} failed:`, error);
-      if (attempts >= maxAttempts) {
-        responseText = `Oops! Kitchen hiccup: \`${error.message || 'Unknown error'}\``;
-      } else {
-        // Wait 1.5 seconds before retrying
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
+      console.warn(`Model ${modelName} failed, trying next if available:`, error.message);
     }
+  }
+
+  if (!success) {
+    responseText = `Oops! Kitchen hiccup: All models are currently experiencing high demand. Please try your command again in just a moment!`;
   }
 
   // Ensure text is safely under Discord's 2000 character limit
