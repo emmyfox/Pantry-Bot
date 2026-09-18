@@ -5,7 +5,6 @@ import { GoogleGenAI } from '@google/genai';
 const app = express();
 app.get('/', (req, res) => res.send('PantryHelper bot is running and cozy!'));
 
-// Listen on Render's required port or fall back to 3000 for local testing
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Pantry bot backend running on port ${PORT}`);
@@ -40,26 +39,41 @@ client.on('interactionCreate', async (interaction) => {
   const ingredients = interaction.options.getString('ingredients');
   await interaction.deferReply();
 
-  try {
-    const prompt = `You are a cozy and helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
-    Provide 2-3 brief, quick meal ideas they can make using these items (assume basic pantry staples like oil, salt, pepper). 
-    Keep it short, warm, and under 1,800 characters total.`;
+  let responseText = null;
+  let attempts = 0;
+  const maxAttempts = 2;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: prompt,
-    });
+  // Retry loop to handle brief 503 high-demand spikes smoothly
+  while (attempts < maxAttempts && !responseText) {
+    attempts++;
+    try {
+      const prompt = `You are a cozy and helpful kitchen assistant. The user has these ingredients on hand: "${ingredients}". 
+      Provide 2-3 brief, quick meal ideas they can make using these items (assume basic pantry staples like oil, salt, pepper). 
+      Keep it short, warm, and under 1,800 characters total.`;
 
-    let replyText = response.text || 'Here are your recipes!';
-    if (replyText.length > 2000) {
-      replyText = replyText.substring(0, 1997) + '...';
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: prompt,
+      });
+
+      responseText = response.text;
+    } catch (error) {
+      console.error(`Attempt ${attempts} failed:`, error);
+      if (attempts >= maxAttempts) {
+        responseText = `Oops! Kitchen hiccup: \`${error.message || 'Unknown error'}\``;
+      } else {
+        // Wait 1.5 seconds before retrying
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
     }
-
-    await interaction.editReply(replyText);
-  } catch (error) {
-    console.error('Detailed Gemini Error:', error);
-    await interaction.editReply(`Oops! Kitchen hiccup: \`${error.message || 'Unknown error'}\``);
   }
+
+  // Ensure text is safely under Discord's 2000 character limit
+  if (responseText.length > 2000) {
+    responseText = responseText.substring(0, 1997) + '...';
+  }
+
+  await interaction.editReply(responseText);
 });
 
 client.login(process.env.DISCORD_BOT_TOKEN);
