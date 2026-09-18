@@ -4,7 +4,12 @@ import { GoogleGenAI } from '@google/genai';
 
 const app = express();
 app.get('/', (req, res) => res.send('PantryHelper bot is running and cozy!'));
-app.listen(process.env.PORT || 3000);
+
+// Listen on Render's required port or fall back to 3000 for local testing
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Pantry bot backend running on port ${PORT}`);
+});
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -45,7 +50,6 @@ client.on('interactionCreate', async (interaction) => {
       contents: prompt,
     });
 
-    // Ensure text is safely under Discord's 2000 character limit
     let replyText = response.text || 'Here are your recipes!';
     if (replyText.length > 2000) {
       replyText = replyText.substring(0, 1997) + '...';
